@@ -1,37 +1,18 @@
 # Energie-Tracker
 
-Weboberfläche zum Erfassen und Auswerten von Strom-, Gas- und Wasserzählerständen. Der Server speichert Einträge, Zählernummern, Zählerhistorie und Anbieterdaten im Ordner `data/`.
+Weboberfläche zum Erfassen und Auswerten von Strom-, Gas- und Wasserzählerständen. Der Server speichert Einträge, Zählernummern, Zählerhistorie und Anbieterdaten im Ordner `/app/data`.
 
-## Als Portainer-Stack starten
+## Portainer-Stack
 
-In Portainer unter **Stacks → Add stack → Git Repository** einen Stack anlegen:
+Der Stack verwendet das Container-Image `ghcr.io/gedankenstrom/energy-tracker:latest` und speichert die Anwendungsdaten im Docker-Volume `energy_tracker_data`.
 
-- Repository URL: `https://github.com/gedankenstrom/energy-tracker`
-- Repository reference: `main`
-- Compose path: `compose.yaml`
-- **Enable relative path volumes** aktivieren, damit Portainer `server.js`, `index.html` und `package.json` aus dem geklonten Repository einbindet.
+In Portainer unter **Stacks → Add stack** den Stack-Namen `energy-tracker` eintragen, dann die Datei `compose.yaml` aus diesem Repository als Stack-Definition verwenden. Alternativ den Inhalt der Compose-Datei in den Web-Editor kopieren.
 
-Dann den Stack deployen. Die Anwendung ist unter [http://192.168.25.101:9092](http://192.168.25.101:9092) erreichbar. Die IP muss der Adresse des Docker-Hosts entsprechen.
+Nach dem Start ist die Anwendung auf Port `9302` erreichbar. `READING_DAY` kann in der Stack-Definition angepasst werden.
 
-Die Messdaten bleiben im Docker-Volume `energy_data` erhalten, auch wenn der Container neu erstellt wird. Der Stack installiert beim Start die Abhängigkeiten aus `package.json`.
+## Image-Veröffentlichung
 
-## Mit Docker Compose starten
-
-Voraussetzung: Docker mit Docker Compose. Im Projektordner ausführen:
-
-```sh
-docker compose up -d
-```
-
-Anschließend ist die Anwendung unter [http://192.168.25.101:9092](http://192.168.25.101:9092) erreichbar. Die Daten bleiben im Docker-Volume `energy_data` erhalten.
-
-Zum Stoppen:
-
-```sh
-docker compose down
-```
-
-`READING_DAY` steuert den konfigurierten Ablesetag (Standard in `compose.yaml`: `1`).
+GitHub Actions baut und veröffentlicht das Image bei jedem Push auf `main` nach GHCR. Nach dem ersten erfolgreichen Workflow-Lauf muss das Paket `energy-tracker` in GitHub unter **Packages → Package settings → Change visibility** auf **Public** gesetzt werden, damit Portainer das Image ohne Registry-Anmeldung herunterladen kann.
 
 ## Lokal starten
 
@@ -42,4 +23,4 @@ npm install
 npm start
 ```
 
-Die Anwendung läuft dann auf Port 3000. Die JSON-Datendateien werden automatisch unter `data/` angelegt.
+Die Anwendung läuft standardmäßig auf Port 9302. Die JSON-Datendateien werden automatisch unter `data/` angelegt.
