@@ -1,0 +1,14 @@
+services:
+  energy-tracker:
+    build: .
+    container_name: energy-tracker
+    ports:
+      - "9092:3000"
+    volumes:
+      - energy_data:/app/data
+    environment:
+      READING_DAY: "1"
+    restart: unless-stopped
+
+volumes:
+  energy_data:
