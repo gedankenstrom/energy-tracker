@@ -562,5 +562,5 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-const PORT = 3000;
+const PORT = parseInt(process.env.PORT, 10) || 3000;
 app.listen(PORT, () => console.log("Energie-Tracker läuft auf Port " + PORT));
