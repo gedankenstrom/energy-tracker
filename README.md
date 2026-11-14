@@ -11,7 +11,7 @@ In Portainer unter **Stacks → Add stack → Git Repository** einen Stack anleg
 - Compose path: `compose.yaml`
 - **Enable relative path volumes** aktivieren, damit Portainer `server.js`, `index.html` und `package.json` aus dem geklonten Repository einbindet.
 
-Dann den Stack deployen. Die Anwendung ist unter [http://localhost:9092](http://localhost:9092) erreichbar.
+Dann den Stack deployen. Die Anwendung ist unter [http://192.168.25.101:9092](http://192.168.25.101:9092) erreichbar. Die IP muss der Adresse des Docker-Hosts entsprechen.
 
 Die Messdaten bleiben im Docker-Volume `energy_data` erhalten, auch wenn der Container neu erstellt wird. Der Stack installiert beim Start die Abhängigkeiten aus `package.json`.
 
@@ -23,7 +23,7 @@ Voraussetzung: Docker mit Docker Compose. Im Projektordner ausführen:
 docker compose up -d
 ```
 
-Anschließend ist die Anwendung unter [http://localhost:9092](http://localhost:9092) erreichbar. Die Daten bleiben im Docker-Volume `energy_data` erhalten.
+Anschließend ist die Anwendung unter [http://192.168.25.101:9092](http://192.168.25.101:9092) erreichbar. Die Daten bleiben im Docker-Volume `energy_data` erhalten.
 
 Zum Stoppen:
 
