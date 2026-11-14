@@ -37,6 +37,7 @@ services:
       - SESSION_SECRET=${SESSION_SECRET:?Set SESSION_SECRET in Portainer}
       - HA_API_TOKEN=${HA_API_TOKEN:?Set HA_API_TOKEN in Portainer}
       - SESSION_COOKIE_SECURE=${SESSION_COOKIE_SECURE:-false}
+      - TRUST_PROXY=${TRUST_PROXY:-false}
     volumes:
       - energy_data:/app/data
 
