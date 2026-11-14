@@ -1,23 +1,35 @@
 # Energie-Tracker
 
-Weboberfläche zum Erfassen und Auswerten von Strom-, Gas- und Wasserzählerständen. Der Server speichert Einträge, Zählernummern, Zählerhistorie und Anbieterdaten im Ordner `/app/data`.
+Weboberfläche zum Erfassen und Auswerten von Strom-, Gas- und Wasserzählerständen. Die App speichert Messwerte, Zählernummern, Zählerhistorie und Anbieterdaten als JSON-Dateien unter `/app/data`.
 
-## Portainer-Stack
+## Installation mit Portainer
 
-Der Stack verwendet das Container-Image `ghcr.io/gedankenstrom/energy-tracker:latest` und speichert die Anwendungsdaten im Docker-Volume `energy_data`.
+Das Container-Image wird als `ghcr.io/gedankenstrom/energy-tracker:latest` veröffentlicht. Das Daten-Volume `energy_data` bleibt beim Ersetzen des Containers erhalten. Entferne das Volume nicht, wenn die gespeicherten Messwerte behalten werden sollen.
 
-In Portainer unter **Stacks → Add stack** den Stack-Namen `energy-tracker` eintragen und die Datei `compose.yaml` aus diesem Repository auswählen. Lege im Abschnitt **Environment variables** diese Werte an:
+In Portainer **Stacks → Add stack → Git Repository** auswählen und eintragen:
 
-- `AUTH_USERNAME`: Anmeldename für die Webseite
-- `AUTH_PASSWORD`: starkes Passwort für die Webseite
-- `SESSION_SECRET`: geheimer Session-Schlüssel, mindestens 32 Zeichen
-- `HA_API_TOKEN`: eigener API-Schlüssel für Home Assistant, mindestens 32 Zeichen
-- `SESSION_COOKIE_SECURE`: `false` bei direktem Zugriff über HTTP; bei HTTPS hinter einem Reverse Proxy `true`
-- `TRUST_PROXY`: `true`, wenn HTTPS durch einen Reverse Proxy terminiert wird; sonst `false`
+- Repository: `https://github.com/gedankenstrom/energy-tracker`
+- Branch: `main`
+- Compose path: `compose.yaml`
 
-`SESSION_SECRET` und `HA_API_TOKEN` kannst du jeweils mit `openssl rand -hex 32` erzeugen. Speichere die Werte in Portainer und Home Assistant, nicht im GitHub-Repository.
+Lege im Abschnitt **Environment variables** die folgenden Variablen an. Sie enthalten Zugangsdaten und dürfen nicht ins Repository eingecheckt werden.
 
-Nach dem Start ist die Webseite auf Port `9092` des Docker-Hosts erreichbar. `READING_DAY` kann in der Stack-Definition angepasst werden.
+| Variable | Wert |
+| --- | --- |
+| `AUTH_USERNAME` | Anmeldename für die Webseite |
+| `AUTH_PASSWORD` | eigenes Passwort, mindestens 12 Zeichen |
+| `SESSION_SECRET` | zufälliger, geheimer Schlüssel, mindestens 32 Zeichen |
+| `HA_API_TOKEN` | eigener Token für Home Assistant, mindestens 32 Zeichen |
+| `SESSION_COOKIE_SECURE` | `false` bei direktem HTTP-Zugriff; `true` bei HTTPS |
+| `TRUST_PROXY` | `false` ohne Reverse Proxy; `true` bei HTTPS hinter einem Reverse Proxy |
+
+Erzeuge für `SESSION_SECRET` und `HA_API_TOKEN` jeweils einen eigenen Zufallswert, zum Beispiel mit:
+
+```sh
+openssl rand -hex 32
+```
+
+Die Stack-Konfiguration lautet:
 
 ```yaml
 version: '3.8'
@@ -25,7 +37,7 @@ version: '3.8'
 services:
   energy-tracker:
     image: ghcr.io/gedankenstrom/energy-tracker:latest
-    container_name: energy-tracker
+    container_name: energy-tracker-new
     restart: unless-stopped
     ports:
       - "9092:3000"
@@ -45,38 +57,47 @@ volumes:
   energy_data:
 ```
 
+Nach dem Deploy ist die Webseite unter `http://<IP-deines-Servers>:9092` erreichbar. Melde dich mit `AUTH_USERNAME` und `AUTH_PASSWORD` an. Bei direktem Zugriff über HTTP sollte die App nur im vertrauenswürdigen Heimnetz erreichbar sein.
+
 ## Home Assistant
 
-Die Webseite und alle normalen API-Endpunkte erfordern eine Anmeldung. Home Assistant kann mit `HA_API_TOKEN` weiterhin lesend auf `/api/consumption-stats` und `/api/providers` zugreifen. Schreibe in Home Assistants `secrets.yaml`:
+Die Webseite und alle normalen API-Endpunkte verlangen eine Anmeldung. Home Assistant kann mit `HA_API_TOKEN` weiterhin lesend auf diese beiden Endpunkte zugreifen:
+
+- `/api/consumption-stats`
+- `/api/providers`
+
+Trage in Home Assistants `secrets.yaml` den Token mit `Bearer ` davor ein. Ersetze den Platzhalter durch denselben Wert wie `HA_API_TOKEN` in Portainer:
 
 ```yaml
 energy_tracker_ha_token: "Bearer DEIN_HA_API_TOKEN"
 ```
 
-Füge bei jedem REST-Sensor, der Energie-Tracker-Daten liest, diesen Header hinzu:
+Füge bei **jedem REST-Sensor**, der Daten vom Energie-Tracker liest, den Header auf derselben Ebene wie `resource` hinzu:
 
 ```yaml
 headers:
   Authorization: !secret energy_tracker_ha_token
 ```
 
-Der Wert hinter `Bearer` muss derselbe sein wie `HA_API_TOKEN` in Portainer. Die HA-Sensoren behalten ihre bisherigen URLs und Templates; nur der Header kommt dazu. Der Token erlaubt ausschließlich lesende GET-Abfragen auf die beiden genannten API-Bereiche.
+Danach Home Assistants REST-Konfiguration neu laden (`rest.reload`). Zur Kontrolle sollten die Sensoren in **Entwicklerwerkzeuge → Zustände** Werte statt `unavailable` anzeigen. Ein direkter Aufruf der API im Browser ohne Login oder Authorization-Header liefert erwartungsgemäß `401 Unauthorized`.
 
-## Image-Veröffentlichung
+## Updates und Veröffentlichung
 
-GitHub Actions baut und veröffentlicht das Image bei jedem Push auf `main` nach GHCR. Nach dem ersten erfolgreichen Workflow-Lauf muss das Paket `energy-tracker` in GitHub unter **Packages → Package settings → Change visibility** auf **Public** gesetzt werden, damit Portainer das Image ohne Registry-Anmeldung herunterladen kann.
+GitHub Actions baut und veröffentlicht das Image bei jedem Push auf `main`, sowohl mit dem Tag `latest` als auch mit dem Commit-Tag. Damit Portainer das Image ohne Registry-Anmeldung laden kann, muss das GitHub-Paket `energy-tracker` öffentlich sein.
+
+Nach einem Update des Stacks in Portainer **Re-pull image** beziehungsweise **Pull latest image** aktivieren, damit die neue Version geladen wird.
 
 ## Lokal starten
 
-Voraussetzung: Node.js 18 oder neuer.
+Voraussetzung: Node.js 18 oder neuer. Die App benötigt auch lokal `AUTH_USERNAME`, `AUTH_PASSWORD`, `SESSION_SECRET` und `HA_API_TOKEN`:
 
 ```sh
 npm install
 export AUTH_USERNAME=admin
-export AUTH_PASSWORD='set-a-strong-password-here'
+export AUTH_PASSWORD='eigenes-sicheres-passwort'
 export SESSION_SECRET="$(openssl rand -hex 32)"
 export HA_API_TOKEN="$(openssl rand -hex 32)"
 npm start
 ```
 
-Die Anwendung läuft standardmäßig auf Port 3000. Die JSON-Datendateien werden automatisch unter `data/` angelegt.
+Der Server läuft standardmäßig auf Port `3000`. JSON-Datendateien werden automatisch unter `data/` angelegt.
