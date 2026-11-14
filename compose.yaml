@@ -1,15 +1,17 @@
+version: '3.8'
+
 services:
   energy-tracker:
     image: ghcr.io/gedankenstrom/energy-tracker:latest
-    container_name: energy-tracker
+    container_name: energy-tracker-new
     ports:
-      - "9302:9302"
+      - "9092:3000"
     environment:
-      PORT: 9302
-      READING_DAY: 1
+      - PORT=3000
+      - READING_DAY=1
     volumes:
-      - energy_tracker_data:/app/data
+      - energy_data:/app/data
     restart: unless-stopped
 
 volumes:
-  energy_tracker_data:
+  energy_data:
