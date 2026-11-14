@@ -1,0 +1,1777 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Energie-Tracker">
+  <meta name="theme-color" content="#f5f7fb">
+  <title>Energieverbrauchs-Tracker</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --surface: rgba(255, 255, 255, 0.88);
+      --surface-strong: #ffffff;
+      --surface-soft: rgba(255, 255, 255, 0.72);
+      --border: rgba(37, 52, 77, 0.10);
+      --text: #162033;
+      --muted: #657286;
+      --primary: #2f6df6;
+      --primary-strong: #1e56cf;
+      --primary-soft: rgba(47, 109, 246, 0.10);
+      --green: #1f9d68;
+      --green-soft: rgba(31, 157, 104, 0.12);
+      --amber: #d48a1f;
+      --amber-soft: rgba(212, 138, 31, 0.14);
+      --danger: #d9534f;
+      --danger-strong: #b83d39;
+      --danger-soft: rgba(217, 83, 79, 0.12);
+      --shadow: 0 20px 48px rgba(24, 32, 51, 0.10);
+      --radius-xl: 26px;
+      --radius-lg: 18px;
+      --radius-md: 14px;
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-right: env(safe-area-inset-right, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --safe-left: env(safe-area-inset-left, 0px);
+    }
+
+    * { box-sizing: border-box; }
+
+    html {
+      scroll-behavior: smooth;
+      -webkit-text-size-adjust: 100%;
+    }
+
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, #ffffff 0%, #eef4ff 35%, transparent 60%),
+        linear-gradient(180deg, #f8fbff 0%, var(--bg) 100%);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .page {
+      width: 100%;
+      max-width: 1320px;
+      margin: 0 auto;
+      padding:
+        calc(18px + var(--safe-top))
+        calc(14px + var(--safe-right))
+        calc(28px + var(--safe-bottom))
+        calc(14px + var(--safe-left));
+    }
+
+    .hero,
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    .hero {
+      padding: 24px;
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      align-items: flex-start;
+      margin-bottom: 18px;
+      background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(238,244,255,0.90));
+    }
+
+    .hero-copy { min-width: 0; }
+
+    .hero h1 {
+      margin: 0 0 10px;
+      font-size: clamp(1.9rem, 5vw, 2.8rem);
+      line-height: 1.04;
+      letter-spacing: -0.03em;
+    }
+
+    .hero p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.5;
+      max-width: 760px;
+      font-size: 0.98rem;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: var(--primary-soft);
+      color: var(--primary-strong);
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .card { padding: 20px; min-width: 0; }
+
+    .section-title {
+      margin: 0 0 6px;
+      font-size: 1.18rem;
+      letter-spacing: -0.02em;
+    }
+
+    .section-subtitle {
+      margin: 0 0 16px;
+      color: var(--muted);
+      line-height: 1.45;
+      font-size: 0.94rem;
+    }
+
+    .top-grid,
+    .layout-grid,
+    .stats-grid,
+    .chart-grid,
+    .management-grid,
+    .entry-grid,
+    .mobile-entry-grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .top-grid {
+      grid-template-columns: minmax(320px, 390px) minmax(0, 1fr);
+      margin-bottom: 18px;
+      align-items: stretch;
+    }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: minmax(320px, 390px) minmax(0, 1fr);
+      gap: 16px;
+      align-items: start;
+      margin-top: 18px;
+    }
+
+    .left-stack,
+    .right-stack {
+      display: grid;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .layout-grid {
+      grid-template-columns: minmax(320px, 390px) minmax(0, 1fr);
+      align-items: start;
+    }
+
+    .stats-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      align-items: stretch;
+    }
+
+    .stat-card {
+      padding: 18px;
+      border-radius: 20px;
+      background: rgba(255,255,255,0.78);
+      border: 1px solid rgba(37, 52, 77, 0.08);
+      min-width: 0;
+      min-height: 142px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .stat-label {
+      display: block;
+      color: var(--muted);
+      font-size: 0.82rem;
+      line-height: 1.3;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      overflow-wrap: anywhere;
+    }
+
+    .stat-value {
+      font-size: clamp(1.3rem, 3vw, 1.9rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.05;
+      min-width: 0;
+      overflow-wrap: anywhere;
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .stat-unit {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--muted);
+      letter-spacing: 0;
+      text-transform: none;
+    }
+
+    .stat-sub {
+      margin-top: 0;
+      color: var(--muted);
+      font-size: 0.84rem;
+      line-height: 1.35;
+      overflow-wrap: anywhere;
+    }
+
+    .config-banner {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      align-items: start;
+      gap: 10px;
+      padding: 12px 14px;
+      border-radius: 18px;
+      background: rgba(47, 109, 246, 0.08);
+      color: var(--primary-strong);
+      border: 1px solid rgba(47, 109, 246, 0.10);
+      margin-bottom: 16px;
+      line-height: 1.4;
+      font-size: 0.88rem;
+      word-break: normal;
+    }
+
+    .config-icon {
+      font-size: 0.95rem;
+      line-height: 1;
+      margin-top: 2px;
+      opacity: 0.9;
+    }
+
+    .config-text {
+      min-width: 0;
+      overflow-wrap: anywhere;
+      font-size: 0.84rem;
+      line-height: 1.32;
+    }
+
+    .config-row + .config-row {
+      margin-top: 4px;
+    }
+
+    .config-text strong {
+      margin-right: 6px;
+    }
+
+    .pill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.9);
+      border: 1px solid rgba(37, 52, 77, 0.08);
+      color: var(--text);
+      font-size: 0.92rem;
+      font-weight: 600;
+    }
+
+    .field,
+    .toggle,
+    .provider-box,
+    .meter-box,
+    .entry-card,
+    .mobile-entry-card {
+      border: 1px solid rgba(37, 52, 77, 0.08);
+      background: rgba(255,255,255,0.76);
+      border-radius: 18px;
+    }
+
+    .form-grid {
+      display: grid;
+      gap: 14px;
+    }
+
+    .field {
+      padding: 14px;
+    }
+
+    .field label {
+      display: block;
+      font-size: 0.9rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    input,
+    select,
+    button {
+      font: inherit;
+    }
+
+    input[type="text"],
+    input[type="url"],
+    input[type="number"],
+    input[type="date"],
+    select {
+      width: 100%;
+      border: 1px solid rgba(37, 52, 77, 0.12);
+      background: rgba(255,255,255,0.98);
+      color: var(--text);
+      border-radius: 14px;
+      padding: 14px 15px;
+      font-size: 16px;
+      outline: none;
+      -webkit-appearance: none;
+      appearance: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    input:focus,
+    select:focus {
+      border-color: rgba(47, 109, 246, 0.40);
+      box-shadow: 0 0 0 4px rgba(47, 109, 246, 0.10);
+    }
+
+    .toggle {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      padding: 14px 16px;
+    }
+
+    .toggle input {
+      width: 18px;
+      height: 18px;
+      margin-top: 2px;
+      accent-color: var(--primary);
+      flex-shrink: 0;
+    }
+
+    .toggle-title {
+      display: block;
+      font-weight: 700;
+      font-size: 0.94rem;
+      margin-bottom: 3px;
+    }
+
+    .toggle small,
+    .helper,
+    .inline-note {
+      color: var(--muted);
+      font-size: 0.86rem;
+      line-height: 1.4;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+    }
+
+    button {
+      border: none;
+      cursor: pointer;
+      border-radius: 14px;
+      min-height: 48px;
+      padding: 14px 18px;
+      font-weight: 700;
+      transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease, opacity 0.2s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    button:hover { transform: translateY(-1px); }
+    button:active { transform: translateY(0); }
+
+    .primary-btn {
+      background: linear-gradient(135deg, var(--primary), var(--primary-strong));
+      color: #fff;
+      box-shadow: 0 14px 28px rgba(47, 109, 246, 0.20);
+    }
+
+    .secondary-btn {
+      background: var(--primary-soft);
+      color: var(--primary-strong);
+    }
+
+    .neutral-btn {
+      background: rgba(101, 114, 134, 0.12);
+      color: #465268;
+    }
+
+    .success-btn {
+      background: linear-gradient(135deg, var(--green), #158357);
+      color: #fff;
+      box-shadow: 0 14px 28px rgba(31, 157, 104, 0.18);
+    }
+
+    .danger-btn {
+      background: linear-gradient(135deg, var(--danger), var(--danger-strong));
+      color: #fff;
+      box-shadow: 0 14px 28px rgba(217, 83, 79, 0.16);
+    }
+
+    .ghost-danger-btn {
+      background: var(--danger-soft);
+      color: var(--danger-strong);
+    }
+
+    .inline-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    .management-wrap {
+      margin-bottom: 18px;
+    }
+
+    .management-toggle {
+      width: 100%;
+      justify-content: space-between;
+      display: flex;
+      align-items: center;
+    }
+
+    .management-content {
+      display: none;
+      margin-top: 14px;
+    }
+
+    .management-content.open {
+      display: block;
+    }
+
+    .management-grid {
+      grid-template-columns: 1fr 1fr;
+      align-items: start;
+    }
+
+    .meter-list,
+    .provider-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .meter-box,
+    .provider-box {
+      padding: 18px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .box-title {
+      margin: 0 0 10px;
+      font-size: 0.98rem;
+      font-weight: 800;
+    }
+
+    .meter-history {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 0.84rem;
+      line-height: 1.35;
+    }
+
+    .provider-info-card {
+      padding: 16px;
+      border-radius: 18px;
+      background: rgba(31, 157, 104, 0.08);
+      border: 1px solid rgba(31, 157, 104, 0.10);
+      display: none;
+      margin-top: 18px;
+    }
+
+    .provider-info-card a {
+      color: var(--primary-strong);
+      text-decoration: none;
+    }
+
+    .provider-info-card a:hover {
+      text-decoration: underline;
+    }
+
+    .chart-card {
+      padding: 20px;
+    }
+
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .chart-meta {
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    .chart-wrap {
+      overflow-x: auto;
+      overflow-y: hidden;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.66);
+      border: 1px solid rgba(37, 52, 77, 0.08);
+      padding: 16px;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .chart-bars {
+      min-height: 280px;
+      min-width: 720px;
+      display: flex;
+      align-items: end;
+      gap: 12px;
+      position: relative;
+      padding-bottom: 26px;
+    }
+
+    .chart-col {
+      width: 56px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: end;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .chart-bar-shell {
+      height: 220px;
+      width: 100%;
+      display: flex;
+      align-items: end;
+      justify-content: center;
+      position: relative;
+    }
+
+    .chart-bar {
+      width: 100%;
+      border-radius: 16px 16px 10px 10px;
+      background: linear-gradient(180deg, #6f9cff 0%, #2f6df6 100%);
+      box-shadow: 0 12px 24px rgba(47, 109, 246, 0.18);
+      transition: transform 0.2s ease, filter 0.2s ease;
+      position: relative;
+      min-height: 8px;
+    }
+
+    .chart-bar:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.02);
+    }
+
+    .chart-bar.zero {
+      height: 10px !important;
+      background: linear-gradient(180deg, #d7deeb 0%, #c8d1e1 100%);
+      box-shadow: none;
+    }
+
+    .chart-value {
+      position: absolute;
+      top: -28px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.95);
+      border: 1px solid rgba(37, 52, 77, 0.08);
+      white-space: nowrap;
+      color: var(--text);
+    }
+
+    .chart-label {
+      text-align: center;
+      font-size: 0.78rem;
+      color: var(--muted);
+      line-height: 1.2;
+    }
+
+    .chart-empty {
+      text-align: center;
+      color: var(--muted);
+      padding: 56px 10px;
+      font-style: italic;
+    }
+
+    .data-topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      overflow-y: hidden;
+      border-radius: 18px;
+      border: 1px solid rgba(37, 52, 77, 0.08);
+      background: rgba(255,255,255,0.76);
+      -webkit-overflow-scrolling: touch;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      min-width: 1060px;
+    }
+
+    thead th {
+      position: sticky;
+      top: 0;
+      background: #f5f8fc;
+      color: #526074;
+      text-align: left;
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 13px 12px;
+      border-bottom: 1px solid rgba(37, 52, 77, 0.08);
+      white-space: nowrap;
+    }
+
+    tbody td {
+      padding: 13px 12px;
+      border-bottom: 1px solid rgba(37, 52, 77, 0.06);
+      font-size: 0.94rem;
+      vertical-align: middle;
+    }
+
+    tbody tr:hover { background: rgba(47, 109, 246, 0.04); }
+    tbody tr.new-meter { background: rgba(31, 157, 104, 0.08); }
+    tbody tr.first-entry { background: rgba(212, 138, 31, 0.10); }
+
+    .mono {
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .actual { color: var(--green); font-weight: 800; }
+    .cumulative { color: #1d3f8f; font-weight: 800; }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 7px 10px;
+      border-radius: 999px;
+      font-size: 0.80rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .badge-blue { background: var(--primary-soft); color: var(--primary-strong); }
+    .badge-green { background: var(--green-soft); color: #13754d; }
+    .badge-amber { background: var(--amber-soft); color: #a26710; }
+    .badge-neutral { background: rgba(101,114,134,0.12); color: #4f5d72; }
+
+    .mobile-entries {
+      display: none;
+      gap: 12px;
+    }
+
+    .mobile-entry-card {
+      padding: 14px;
+    }
+
+    .mobile-entry-card.new-meter {
+      background: rgba(31, 157, 104, 0.10);
+    }
+
+    .mobile-entry-card.first-entry {
+      background: rgba(212, 138, 31, 0.12);
+    }
+
+    .mobile-entry-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+      align-items: flex-start;
+    }
+
+    .mobile-entry-title {
+      font-weight: 800;
+      font-size: 1rem;
+      margin-bottom: 4px;
+    }
+
+    .mobile-entry-date {
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    .mobile-entry-grid {
+      grid-template-columns: 1fr 1fr;
+      margin-bottom: 12px;
+    }
+
+    .mobile-entry-item {
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.78);
+      min-width: 0;
+    }
+
+    .mobile-entry-label {
+      display: block;
+      color: var(--muted);
+      font-size: 0.77rem;
+      margin-bottom: 4px;
+    }
+
+    .mobile-entry-value {
+      font-size: 0.94rem;
+      font-weight: 700;
+      line-height: 1.3;
+      overflow-wrap: anywhere;
+    }
+
+    .entry-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .empty-state {
+      text-align: center;
+      color: var(--muted);
+      padding: 32px 14px;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(22, 32, 51, 0.45);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      z-index: 1000;
+    }
+
+    .modal-backdrop.visible { display: flex; }
+
+    .modal {
+      width: min(100%, 430px);
+      background: rgba(255,255,255,0.96);
+      border-radius: 24px;
+      border: 1px solid rgba(37, 52, 77, 0.08);
+      box-shadow: 0 28px 64px rgba(22, 32, 51, 0.20);
+      padding: 20px;
+    }
+
+    .modal h3 {
+      margin: 0 0 8px;
+      font-size: 1.16rem;
+      letter-spacing: -0.02em;
+    }
+
+    .modal p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.45;
+      font-size: 0.95rem;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .hidden { display: none !important; }
+
+    @media (max-width: 1080px) {
+      .top-grid,
+      .main-grid,
+      .layout-grid,
+      .management-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .stats-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 720px) {
+      .page {
+        padding:
+          calc(12px + var(--safe-top))
+          calc(10px + var(--safe-right))
+          calc(18px + var(--safe-bottom))
+          calc(10px + var(--safe-left));
+      }
+
+      .hero,
+      .card,
+      .modal {
+        padding: 16px;
+        border-radius: 20px;
+      }
+
+      .hero {
+        flex-direction: column;
+        gap: 14px;
+      }
+
+      .config-banner {
+        grid-template-columns: 1fr;
+        gap: 6px;
+        padding: 10px 12px;
+        border-radius: 16px;
+      }
+
+      .config-icon {
+        font-size: 0.9rem;
+        margin-top: 0;
+      }
+
+      .config-text {
+        font-size: 0.8rem;
+        line-height: 1.28;
+      }
+
+      .config-row + .config-row {
+        margin-top: 4px;
+      }
+
+      .config-text strong {
+        display: inline;
+      }
+
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .actions,
+      .inline-actions,
+      .modal-actions {
+        flex-direction: column;
+      }
+
+      .primary-btn,
+      .secondary-btn,
+      .neutral-btn,
+      .success-btn,
+      .danger-btn,
+      .ghost-danger-btn,
+      .inline-actions button,
+      .actions button {
+        width: 100%;
+      }
+
+      .data-topbar,
+      .chart-header {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .table-wrap { display: none; }
+      .mobile-entries { display: grid; }
+      .mobile-entry-grid { grid-template-columns: 1fr; }
+      .chart-bars { min-width: 640px; }
+    }
+
+    @media (max-width: 430px) {
+      .hero h1 { font-size: 1.65rem; }
+      .section-title { font-size: 1.08rem; }
+      .hero p,
+      .section-subtitle,
+      .helper,
+      .inline-note,
+      .modal p { font-size: 0.9rem; }
+      .config-text {
+        font-size: 0.76rem;
+        line-height: 1.24;
+      }
+
+      .config-banner {
+        padding: 9px 10px;
+        border-radius: 15px;
+      }
+
+      .config-icon {
+        font-size: 0.82rem;
+      }
+      .mobile-entry-card { padding: 12px; }
+      .chart-wrap { padding: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <section class="hero">
+      <div class="hero-copy">
+        <h1>Energieverbrauchs-Tracker</h1>
+        <p>Strom, Wasser, Zählerstände und Anbieter an einem Ort.</p>
+      </div>
+      <div class="hero-badge" id="heroSelection">Strom aktiv</div>
+    </section>
+
+    <div class="config-banner" id="configInfo">📅 <strong>Lade Konfiguration...</strong></div>
+
+    <section class="management-wrap">
+      <button class="neutral-btn management-toggle" id="toggleManagementBtn" type="button">
+        <span>Zählernummern & Anbieter verwalten</span>
+        <span id="managementChevron">▾</span>
+      </button>
+      <div class="management-content" id="managementContent">
+        <div class="management-grid">
+          <article class="card">
+            <h2 class="section-title">Zählernummern</h2>
+            <p class="section-subtitle">Aktuelle Nummern pflegen und frühere Zählerwechsel nachvollziehen.</p>
+            <div class="meter-list" id="meterNumbers"></div>
+          </article>
+
+          <article class="card">
+            <h2 class="section-title">Anbieter</h2>
+            <p class="section-subtitle">Strom- und Gasanbieter mit Webseite und Vertragsdaten hinterlegen.</p>
+            <div class="provider-list" id="providerManagement"></div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="main-grid">
+      <div class="left-stack">
+        <article class="card">
+          <h2 class="section-title">Ansicht & Statistik</h2>
+          <p class="section-subtitle">Zählertyp wählen, Daten filtern und direkt die wichtigsten Kennzahlen sehen.</p>
+
+          <div class="form-grid">
+            <div class="field">
+              <label for="filterType">Zählertyp auswählen</label>
+              <select id="filterType">
+                <option value="Strom" selected>Strom</option>
+                <option value="Gas">Gas</option>
+                <option value="Wasser Abstellraum">Wasser Abstellraum</option>
+                <option value="Wasser Treppe">Wasser Treppe</option>
+                <option value="Wasser Waschküche">Wasser Waschküche</option>
+                <option value="Wasser Gesamt">Wasser Gesamt</option>
+                <option value="">Alle Zähler anzeigen</option>
+              </select>
+            </div>
+
+            <div class="actions">
+              <button class="primary-btn" type="button" onclick="loadData()">Daten laden</button>
+              <button class="secondary-btn" type="button" onclick="exportCSV()">CSV exportieren</button>
+            </div>
+          </div>
+
+          <div class="provider-info-card" id="providerInfo">
+            <h3 class="section-title" style="margin-bottom: 10px; font-size: 1rem;">Anbieter für <span id="providerMeterType"></span></h3>
+            <div id="providerDetails"></div>
+          </div>
+        </article>
+
+        <article class="card" id="newEntrySection">
+          <h2 class="section-title">Neuen Eintrag erfassen</h2>
+          <p class="section-subtitle">Zählerstand eintragen, Datum setzen und bei Bedarf einen Zählertausch markieren.</p>
+
+          <div class="form-grid">
+            <div class="field">
+              <label for="type">Zählertyp</label>
+              <select id="type">
+                <option value="Strom" selected>Strom (kWh)</option>
+                <option value="Gas">Gas (m³)</option>
+                <option value="Wasser Abstellraum">Wasser Abstellraum (m³)</option>
+                <option value="Wasser Treppe">Wasser Treppe (m³)</option>
+                <option value="Wasser Waschküche">Wasser Waschküche (m³)</option>
+              </select>
+              <div class="inline-note" id="currentMeterDisplay"></div>
+            </div>
+
+            <div class="field">
+              <label for="value">Zählerstand</label>
+              <input type="number" id="value" placeholder="Zählerstand" step="0.1" inputmode="decimal">
+            </div>
+
+            <div class="field">
+              <label for="date">Datum</label>
+              <input type="date" id="date">
+            </div>
+
+            <label class="toggle">
+              <input type="checkbox" id="isNewMeter">
+              <span>
+                <span class="toggle-title">Neuer Zähler (Zählertausch)</span>
+                <small>Aktivieren, wenn der bisherige Zähler ersetzt wurde.</small>
+              </span>
+            </label>
+
+            <div class="field hidden" id="meterUpdateSection">
+              <label for="newMeterNumber">Neue Zählernummer für <span id="meterTypeLabel"></span></label>
+              <input type="text" id="newMeterNumber" placeholder="Neue Zählernummer eingeben">
+              <div class="inline-note">Aktuelle Zählernummer: <span id="currentMeterNumber"></span></div>
+            </div>
+
+            <div class="actions">
+              <button class="primary-btn" type="button" onclick="addEntry()">Eintrag speichern</button>
+            </div>
+          </div>
+        </article>
+      </div>
+
+      <div class="right-stack">
+        <article class="card" id="consumptionStats" style="display:none; padding: 24px 28px; min-height: 100%;">
+          <h2 class="section-title">Verbrauchsstatistik</h2>
+          <p class="section-subtitle">Zusammenfassung für den aktuell gewählten Zählertyp.</p>
+
+          <div class="pill-row" style="margin-bottom: 14px;">
+            <div class="pill">📊 <span id="currentMeterType">–</span></div>
+            <div class="pill">🗓️ <span id="dateRange">–</span></div>
+          </div>
+
+          <div class="stats-grid">
+            <div class="stat-card">
+              <span class="stat-label">Jahresverbrauch</span>
+              <div class="stat-value mono"><span id="yearlyConsumption">0,0</span><span class="stat-unit" id="yearlyConsumptionUnit">kWh</span></div>
+              <div class="stat-sub">letzte 12 Monate</div>
+            </div>
+            <div class="stat-card">
+              <span class="stat-label">Durchschnitt pro Monat</span>
+              <div class="stat-value mono"><span id="monthlyAverage">0,0</span><span class="stat-unit" id="monthlyAverageUnit">kWh</span></div>
+              <div class="stat-sub">monatlicher Mittelwert</div>
+            </div>
+            <div class="stat-card">
+              <span class="stat-label">Gesamtverbrauch</span>
+              <div class="stat-value mono"><span id="totalConsumption">0,0</span><span class="stat-unit" id="totalConsumptionUnit">kWh</span></div>
+              <div class="stat-sub">seit erstem Eintrag</div>
+            </div>
+            <div class="stat-card">
+              <span class="stat-label">Einträge gesamt</span>
+              <div class="stat-value mono" id="entryCount">0</div>
+              <div class="stat-sub">erfasste Werte</div>
+            </div>
+          </div>
+        </article>
+
+        <article class="card chart-card" id="monthlyChart" style="display:none;">
+          <div class="chart-header">
+            <div>
+              <h2 class="section-title" id="chartTitle">Monatlicher Verbrauch</h2>
+              <p class="section-subtitle" style="margin-bottom: 0;">Verlauf der letzten 12 Monate.</p>
+            </div>
+            <div class="chart-meta" id="chartInfo"></div>
+          </div>
+          <div class="chart-wrap">
+            <div id="chartBars" class="chart-bars"></div>
+          </div>
+        </article>
+
+        <article class="card" id="consumptionDataSection">
+          <div class="data-topbar">
+            <div>
+              <h2 class="section-title">Verbrauchsdaten</h2>
+              <p class="section-subtitle">Neueste Einträge stehen oben. Auf Mobilgeräten werden sie als Karten angezeigt.</p>
+            </div>
+            <button id="toggleEntriesBtn" class="secondary-btn" style="display:none;" type="button" onclick="toggleEntries()">Mehr anzeigen</button>
+          </div>
+
+          <div class="mobile-entries" id="mobileEntries"></div>
+
+          <div class="table-wrap">
+            <table id="logTable">
+              <thead>
+                <tr>
+                  <th>Datum</th>
+                  <th>Typ</th>
+                  <th>Zählernummer</th>
+                  <th>Zählerstand</th>
+                  <th>Verbrauch</th>
+                  <th>Kumulativ</th>
+                  <th>Verbrauchsmonat</th>
+                  <th>Status</th>
+                  <th>Aktion</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </article>
+      </div>
+    </section>
+  </div>
+
+  <div class="modal-backdrop" id="confirmModalBackdrop" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="confirmModalTitle">
+      <h3 id="confirmModalTitle">Bitte bestätigen</h3>
+      <p id="confirmModalText">Möchtest du fortfahren?</p>
+      <div class="modal-actions">
+        <button class="neutral-btn" id="confirmCancelBtn" type="button">Abbrechen</button>
+        <button class="danger-btn" id="confirmAcceptBtn" type="button">Bestätigen</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let READING_DAY = 1;
+    let currentMeters = {};
+    let meterHistory = {};
+    let providers = {};
+    let allEntries = [];
+    let showingAll = false;
+    let confirmHandler = null;
+
+    const modalBackdrop = document.getElementById('confirmModalBackdrop');
+    const modalText = document.getElementById('confirmModalText');
+    const confirmCancelBtn = document.getElementById('confirmCancelBtn');
+    const confirmAcceptBtn = document.getElementById('confirmAcceptBtn');
+
+    function openConfirmModal(text, onConfirm, danger = true, buttonLabel = 'Bestätigen') {
+      modalText.textContent = text;
+      confirmHandler = onConfirm;
+      confirmAcceptBtn.textContent = buttonLabel;
+      confirmAcceptBtn.className = danger ? 'danger-btn' : 'primary-btn';
+      modalBackdrop.classList.add('visible');
+      modalBackdrop.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeConfirmModal() {
+      confirmHandler = null;
+      modalBackdrop.classList.remove('visible');
+      modalBackdrop.setAttribute('aria-hidden', 'true');
+    }
+
+    confirmCancelBtn.addEventListener('click', closeConfirmModal);
+    confirmAcceptBtn.addEventListener('click', async () => {
+      const handler = confirmHandler;
+      closeConfirmModal();
+      if (handler) await handler();
+    });
+    modalBackdrop.addEventListener('click', (event) => {
+      if (event.target === modalBackdrop) closeConfirmModal();
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && modalBackdrop.classList.contains('visible')) closeConfirmModal();
+    });
+
+    function badge(text, variant = 'neutral') {
+      return `<span class="badge badge-${variant}">${text}</span>`;
+    }
+
+    function setCurrentDate() {
+      const today = new Date();
+      document.getElementById('date').value = today.toISOString().split('T')[0];
+    }
+
+    function germanFormat(number) {
+      if (number === null || number === undefined || Number.isNaN(Number(number))) return '0,0';
+      return Number(number).toFixed(1).replace('.', ',');
+    }
+
+    function formatDate(dateString) {
+      return new Date(dateString).toLocaleDateString('de-DE');
+    }
+
+    function getConsumptionMonth(readingDate) {
+      const date = new Date(readingDate);
+      const readingDay = date.getDate();
+      if (readingDay >= 1 && readingDay <= 3) date.setMonth(date.getMonth() - 1);
+      return date.toLocaleDateString('de-DE', { month: 'long', year: 'numeric' });
+    }
+
+    function updateHeroSelection() {
+      const filterType = document.getElementById('filterType').value;
+      document.getElementById('heroSelection').textContent = filterType ? `${filterType} aktiv` : 'Alle Zähler';
+    }
+
+    function updateMeterNumberDisplay() {
+      const selectedType = document.getElementById('type').value;
+      const meterNumber = currentMeters[selectedType] || 'nicht gesetzt';
+      document.getElementById('currentMeterDisplay').textContent = 'Aktuelle Zählernummer: ' + meterNumber;
+    }
+
+    async function loadConfig() {
+      try {
+        const res = await fetch('/api/config');
+        const config = await res.json();
+        READING_DAY = config.readingDay;
+      } catch (error) {
+        console.error('Fehler beim Laden der Konfiguration:', error);
+      }
+
+      document.getElementById('configInfo').innerHTML = `<div class="config-text"><div class="config-row"><strong>Ableselogik:</strong> Einträge vom 1.–3. werden dem Vormonat zugeordnet, ab dem 4. dem aktuellen Monat.</div><div class="config-row"><strong>Ablesetag:</strong> ${READING_DAY}. des Monats</div></div>`;
+      document.getElementById('chartInfo').textContent = '1.–3. → Vormonat · 4.–31. → aktueller Monat';
+    }
+
+    function toggleManagement(force = null) {
+      const content = document.getElementById('managementContent');
+      const chevron = document.getElementById('managementChevron');
+      const open = force !== null ? force : !content.classList.contains('open');
+      content.classList.toggle('open', open);
+      chevron.textContent = open ? '▴' : '▾';
+    }
+
+    document.getElementById('toggleManagementBtn').addEventListener('click', () => toggleManagement());
+
+    document.getElementById('isNewMeter').addEventListener('change', function() {
+      const meterUpdateSection = document.getElementById('meterUpdateSection');
+      if (this.checked) {
+        const selectedType = document.getElementById('type').value;
+        document.getElementById('meterTypeLabel').textContent = selectedType;
+        document.getElementById('currentMeterNumber').textContent = currentMeters[selectedType] || 'keine';
+        meterUpdateSection.classList.remove('hidden');
+      } else {
+        meterUpdateSection.classList.add('hidden');
+      }
+    });
+
+    document.getElementById('type').addEventListener('change', function() {
+      const selectedType = this.value;
+      document.getElementById('filterType').value = selectedType;
+      updateMeterNumberDisplay();
+      updateHeroSelection();
+
+      if (document.getElementById('isNewMeter').checked) {
+        document.getElementById('meterTypeLabel').textContent = selectedType;
+        document.getElementById('currentMeterNumber').textContent = currentMeters[selectedType] || 'keine';
+      }
+
+      loadData();
+    });
+
+    document.getElementById('filterType').addEventListener('change', function() {
+      const selectedType = this.value;
+      if (selectedType && selectedType !== 'Wasser Gesamt') {
+        document.getElementById('type').value = selectedType;
+        updateMeterNumberDisplay();
+        if (document.getElementById('isNewMeter').checked) {
+          document.getElementById('meterTypeLabel').textContent = selectedType;
+          document.getElementById('currentMeterNumber').textContent = currentMeters[selectedType] || 'keine';
+        }
+      }
+      updateHeroSelection();
+      toggleSectionsBasedOnFilter(selectedType);
+      loadData();
+    });
+
+    function toggleSectionsBasedOnFilter(filterType) {
+      const newEntrySection = document.getElementById('newEntrySection');
+      const consumptionDataSection = document.getElementById('consumptionDataSection');
+      const providerInfo = document.getElementById('providerInfo');
+      const monthlyChart = document.getElementById('monthlyChart');
+
+      if (filterType === '') {
+        newEntrySection.style.display = 'none';
+        providerInfo.style.display = 'none';
+        monthlyChart.style.display = 'none';
+      } else {
+        monthlyChart.style.display = 'block';
+        if (filterType === 'Wasser Gesamt') {
+          newEntrySection.style.display = 'none';
+          consumptionDataSection.style.display = 'none';
+          providerInfo.style.display = 'none';
+        } else {
+          newEntrySection.style.display = 'block';
+          consumptionDataSection.style.display = 'block';
+          if (filterType === 'Strom' || filterType === 'Gas') {
+            showProviderInfo(filterType);
+          } else {
+            providerInfo.style.display = 'none';
+          }
+        }
+      }
+    }
+
+    async function loadMeterNumbers() {
+      try {
+        const [metersRes, historyRes, providersRes] = await Promise.all([
+          fetch('/api/meters'),
+          fetch('/api/meter-history'),
+          fetch('/api/providers')
+        ]);
+        currentMeters = await metersRes.json();
+        meterHistory = await historyRes.json();
+        providers = await providersRes.json();
+        displayMeterNumbers();
+        displayProviderManagement();
+        updateMeterNumberDisplay();
+      } catch (error) {
+        console.error('Fehler beim Laden der Zählerdaten:', error);
+      }
+    }
+
+    function displayMeterNumbers() {
+      const meterNumbersDiv = document.getElementById('meterNumbers');
+      meterNumbersDiv.innerHTML = '';
+      const types = ['Strom', 'Gas', 'Wasser Abstellraum', 'Wasser Treppe', 'Wasser Waschküche'];
+
+      types.forEach(type => {
+        const historyText = meterHistory[type] && meterHistory[type].length
+          ? meterHistory[type].map(item => item.meterNumber).join(', ')
+          : 'keine Historie';
+
+        const box = document.createElement('div');
+        box.className = 'meter-box';
+        box.innerHTML = `
+          <div class="box-title">${type}</div>
+          <div class="form-grid">
+            <div class="field" style="padding:0; border:none; background:transparent;">
+              <label for="meterNumber-${type}">Zählernummer</label>
+              <input type="text" id="meterNumber-${type}" value="${currentMeters[type] || ''}" placeholder="Zählernummer eingeben">
+            </div>
+          </div>
+          <div class="inline-actions">
+            <button class="secondary-btn" type="button" onclick="saveMeterNumber('${type.replace(/'/g, "\\'")}')">Speichern</button>
+          </div>
+          <div class="meter-history"><strong>Historie:</strong> ${historyText}</div>
+        `;
+        meterNumbersDiv.appendChild(box);
+      });
+    }
+
+    function displayProviderManagement() {
+      const providerManagementDiv = document.getElementById('providerManagement');
+      providerManagementDiv.innerHTML = '';
+
+      ['Strom', 'Gas'].forEach(type => {
+        const provider = providers[type] || { name: '', website: '', contractStart: '', contractEnd: '' };
+        const box = document.createElement('div');
+        box.className = 'provider-box';
+        box.innerHTML = `
+          <div class="box-title">${type} Anbieter</div>
+          <div class="form-grid">
+            <div class="field" style="padding:0; border:none; background:transparent;">
+              <label for="providerName-${type}">Anbietername</label>
+              <input type="text" id="providerName-${type}" value="${provider.name || ''}" placeholder="Anbietername">
+            </div>
+            <div class="field" style="padding:0; border:none; background:transparent;">
+              <label for="providerWebsite-${type}">Webseite</label>
+              <input type="url" id="providerWebsite-${type}" value="${provider.website || ''}" placeholder="https://...">
+            </div>
+            <div class="field" style="padding:0; border:none; background:transparent;">
+              <label for="providerStart-${type}">Vertragsstart</label>
+              <input type="date" id="providerStart-${type}" value="${provider.contractStart || ''}">
+            </div>
+            <div class="field" style="padding:0; border:none; background:transparent;">
+              <label for="providerEnd-${type}">Vertragsende</label>
+              <input type="date" id="providerEnd-${type}" value="${provider.contractEnd || ''}">
+            </div>
+          </div>
+          <div class="inline-actions" style="margin-top: 4px;">
+            <button class="success-btn" type="button" onclick="saveProvider('${type.replace(/'/g, "\\'")}')">Anbieter speichern</button>
+          </div>
+        `;
+        providerManagementDiv.appendChild(box);
+      });
+    }
+
+    async function saveMeterNumber(type) {
+      const meterNumber = document.getElementById('meterNumber-' + type).value;
+      try {
+        await fetch('/api/meters', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type, meterNumber })
+        });
+        currentMeters[type] = meterNumber;
+        updateMeterNumberDisplay();
+        await loadMeterNumbers();
+      } catch (error) {
+        console.error('Fehler beim Speichern der Zählernummer:', error);
+        alert('Fehler beim Speichern: ' + error.message);
+      }
+    }
+
+    async function saveProvider(type) {
+      const providerData = {
+        name: document.getElementById('providerName-' + type).value,
+        website: document.getElementById('providerWebsite-' + type).value,
+        contractStart: document.getElementById('providerStart-' + type).value,
+        contractEnd: document.getElementById('providerEnd-' + type).value
+      };
+      try {
+        await fetch('/api/providers', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type, providerData })
+        });
+        providers[type] = providerData;
+        const currentFilter = document.getElementById('filterType').value;
+        if (currentFilter === type) showProviderInfo(type);
+      } catch (error) {
+        console.error('Fehler beim Speichern des Anbieters:', error);
+        alert('Fehler beim Speichern: ' + error.message);
+      }
+    }
+
+    function showProviderInfo(type) {
+      const providerInfo = document.getElementById('providerInfo');
+      const providerDetails = document.getElementById('providerDetails');
+      const providerMeterType = document.getElementById('providerMeterType');
+      const provider = providers[type];
+
+      if (provider && (provider.name || provider.website || provider.contractStart || provider.contractEnd)) {
+        providerInfo.style.display = 'block';
+        providerMeterType.textContent = type;
+
+        let html = '';
+        if (provider.name) html += `<div><strong>Anbieter:</strong> ${provider.name}</div>`;
+        if (provider.website) html += `<div><strong>Webseite:</strong> <a href="${provider.website}" target="_blank">${provider.website}</a></div>`;
+        if (provider.contractStart || provider.contractEnd) {
+          html += '<div style="margin-top:8px; color: var(--muted); font-size: 0.9rem;">';
+          if (provider.contractStart) html += `<strong>Von:</strong> ${formatDate(provider.contractStart)}`;
+          if (provider.contractEnd) html += `${provider.contractStart ? ' · ' : ''}<strong>Bis:</strong> ${formatDate(provider.contractEnd)}`;
+          html += '</div>';
+        }
+        providerDetails.innerHTML = html;
+      } else {
+        providerInfo.style.display = 'none';
+      }
+    }
+
+    async function loadData() {
+      await loadEntries();
+      await loadConsumptionStats();
+      await loadMonthlyChart();
+      const filterType = document.getElementById('filterType').value;
+      if (filterType === 'Strom' || filterType === 'Gas') showProviderInfo(filterType);
+    }
+
+    function getUnitForType(type) {
+      if (type === 'Strom') return 'kWh';
+      if (type === 'Gas') return 'm³';
+      if (type && type.startsWith('Wasser')) return 'm³';
+      return '';
+    }
+
+    async function loadConsumptionStats() {
+      const filterType = document.getElementById('filterType').value;
+      if (!filterType) {
+        document.getElementById('consumptionStats').style.display = 'none';
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/consumption-stats?type=' + encodeURIComponent(filterType));
+        if (!res.ok) {
+          document.getElementById('consumptionStats').style.display = 'none';
+          return;
+        }
+        const stats = await res.json();
+        const unit = getUnitForType(filterType);
+        document.getElementById('consumptionStats').style.display = 'block';
+        document.getElementById('currentMeterType').textContent = filterType;
+        document.getElementById('yearlyConsumption').textContent = stats.yearlyConsumptionFormatted || germanFormat(stats.yearlyConsumption);
+        document.getElementById('monthlyAverage').textContent = stats.monthlyAverageFormatted || germanFormat(stats.monthlyAverage);
+        document.getElementById('totalConsumption').textContent = stats.totalConsumptionFormatted || germanFormat(stats.totalConsumption);
+        document.getElementById('entryCount').textContent = stats.entryCount;
+        document.getElementById('yearlyConsumptionUnit').textContent = unit;
+        document.getElementById('monthlyAverageUnit').textContent = unit;
+        document.getElementById('totalConsumptionUnit').textContent = unit;
+
+        if (stats.firstDate && stats.lastDate) {
+          document.getElementById('dateRange').textContent = `${formatDate(stats.firstDate)} – ${formatDate(stats.lastDate)} (${stats.monthCount} Monate)`;
+        } else {
+          document.getElementById('dateRange').textContent = 'noch kein Zeitraum';
+        }
+      } catch (error) {
+        console.error('Fehler beim Laden der Statistik:', error);
+        document.getElementById('consumptionStats').style.display = 'none';
+      }
+    }
+
+    async function loadMonthlyChart() {
+      const filterType = document.getElementById('filterType').value;
+      const monthlyChart = document.getElementById('monthlyChart');
+      if (!filterType || filterType === '') {
+        monthlyChart.style.display = 'none';
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/monthly-consumption?type=' + encodeURIComponent(filterType));
+        if (!res.ok) {
+          monthlyChart.style.display = 'none';
+          return;
+        }
+        const monthlyData = await res.json();
+        renderMonthlyChart(monthlyData, filterType);
+      } catch (error) {
+        console.error('Fehler beim Laden der Monatsdaten:', error);
+        monthlyChart.style.display = 'none';
+      }
+    }
+
+    function renderMonthlyChart(monthlyData, type) {
+      const chartContainer = document.getElementById('chartBars');
+      const chartTitle = document.getElementById('chartTitle');
+      chartContainer.innerHTML = '';
+      chartTitle.textContent = `Monatlicher Verbrauch – ${type}`;
+
+      if (!monthlyData.length) {
+        chartContainer.innerHTML = '<div class="chart-empty">Keine Daten für die letzten 12 Monate verfügbar.</div>';
+        document.getElementById('monthlyChart').style.display = 'block';
+        return;
+      }
+
+      const maxConsumption = Math.max(...monthlyData.map(item => item.consumption), 1);
+      const maxHeight = 220;
+
+      monthlyData.forEach(item => {
+        const col = document.createElement('div');
+        col.className = 'chart-col';
+
+        const shell = document.createElement('div');
+        shell.className = 'chart-bar-shell';
+
+        const bar = document.createElement('div');
+        bar.className = 'chart-bar' + (item.consumption > 0 ? '' : ' zero');
+        bar.style.height = `${Math.max((item.consumption / maxConsumption) * maxHeight, item.consumption > 0 ? 22 : 10)}px`;
+        bar.title = `${item.monthName}: ${item.consumptionFormatted}` + (item.readingDate ? ` (Ablesung: ${formatDate(item.readingDate)})` : '');
+
+        const value = document.createElement('div');
+        value.className = 'chart-value';
+        value.textContent = item.consumptionFormatted;
+        bar.appendChild(value);
+
+        shell.appendChild(bar);
+
+        const label = document.createElement('div');
+        label.className = 'chart-label';
+        label.textContent = item.monthName.split(' ')[0];
+
+        col.appendChild(shell);
+        col.appendChild(label);
+        chartContainer.appendChild(col);
+      });
+
+      document.getElementById('monthlyChart').style.display = 'block';
+    }
+
+    async function loadEntries() {
+      try {
+        const filterType = document.getElementById('filterType').value;
+        let url = '/api/entries';
+        if (filterType) url += '?type=' + encodeURIComponent(filterType);
+        const res = await fetch(url);
+        const entries = await res.json();
+        allEntries = [...entries].reverse();
+        renderEntries();
+      } catch (error) {
+        console.error('Fehler beim Laden der Einträge:', error);
+      }
+    }
+
+    function findMeterNumberForEntry(entry) {
+      const entryDate = new Date(entry.date);
+      const type = entry.type;
+      if (!meterHistory[type] || meterHistory[type].length === 0) return currentMeters[type] || '';
+      const sortedHistory = [...meterHistory[type]].sort((a, b) => new Date(b.changedAt) - new Date(a.changedAt));
+      for (const historyItem of sortedHistory) {
+        if (new Date(historyItem.changedAt) <= entryDate) {
+          return historyItem.changedTo || historyItem.meterNumber || currentMeters[type] || '';
+        }
+      }
+      return sortedHistory[sortedHistory.length - 1]?.meterNumber || currentMeters[type] || '';
+    }
+
+    function renderEntries() {
+      const tableBody = document.querySelector('#logTable tbody');
+      const mobileEntries = document.getElementById('mobileEntries');
+      tableBody.innerHTML = '';
+      mobileEntries.innerHTML = '';
+
+      if (!allEntries.length) {
+        tableBody.innerHTML = '<tr><td colspan="9" class="empty-state">Keine Einträge gefunden.</td></tr>';
+        mobileEntries.innerHTML = '<div class="empty-state">Keine Einträge gefunden.</div>';
+        document.getElementById('toggleEntriesBtn').style.display = 'none';
+        return;
+      }
+
+      const firstEntries = {};
+      [...allEntries].reverse().forEach(entry => {
+        if (!firstEntries[entry.type]) firstEntries[entry.type] = entry.id;
+      });
+
+      let entriesToShow = allEntries;
+      const toggleBtn = document.getElementById('toggleEntriesBtn');
+      if (!showingAll && allEntries.length > 12) {
+        entriesToShow = allEntries.slice(0, 12);
+        toggleBtn.style.display = 'inline-flex';
+        toggleBtn.textContent = 'Mehr anzeigen';
+      } else if (showingAll && allEntries.length > 12) {
+        toggleBtn.style.display = 'inline-flex';
+        toggleBtn.textContent = 'Weniger anzeigen';
+      } else {
+        toggleBtn.style.display = 'none';
+      }
+
+      entriesToShow.forEach((e, index) => {
+        const entryMeterNumber = findMeterNumberForEntry(e);
+        const isFirstEntry = e.id === firstEntries[e.type];
+        const statusBadges = [];
+        if (e.isNewMeter) statusBadges.push(badge('Neuer Zähler', 'green'));
+        if (isFirstEntry) statusBadges.push(badge('Erster Eintrag', 'amber'));
+        if (!statusBadges.length) statusBadges.push(badge('Normal', 'neutral'));
+
+        const row = document.createElement('tr');
+        if (e.isNewMeter) row.classList.add('new-meter');
+        if (isFirstEntry) row.classList.add('first-entry');
+        row.innerHTML = `
+          <td class="mono">${formatDate(e.date)}</td>
+          <td>${e.type}</td>
+          <td>${entryMeterNumber}</td>
+          <td class="mono">${e.valueFormatted || germanFormat(e.value)}</td>
+          <td class="mono actual">${e.actualConsumptionFormatted || germanFormat(e.actualConsumption)}</td>
+          <td class="mono cumulative">${e.cumulativeConsumptionFormatted || germanFormat(e.cumulativeConsumption)}</td>
+          <td>${e.consumptionMonth || getConsumptionMonth(e.date)}</td>
+          <td>${statusBadges.join(' ')}</td>
+          <td>${isFirstEntry ? '' : `<button class="ghost-danger-btn" type="button" onclick="requestDelete(${e.id}, '${formatDate(e.date)}', '${e.type.replace(/'/g, "\\'")}')">Löschen</button>`}</td>
+        `;
+        tableBody.appendChild(row);
+
+        const card = document.createElement('div');
+        card.className = 'mobile-entry-card' + (e.isNewMeter ? ' new-meter' : '') + (isFirstEntry ? ' first-entry' : '');
+        card.innerHTML = `
+          <div class="mobile-entry-head">
+            <div>
+              <div class="mobile-entry-title">${e.type}</div>
+              <div class="mobile-entry-date">${formatDate(e.date)}</div>
+            </div>
+            <div>${statusBadges.join(' ')}</div>
+          </div>
+
+          <div class="mobile-entry-grid">
+            <div class="mobile-entry-item">
+              <span class="mobile-entry-label">Zählernummer</span>
+              <div class="mobile-entry-value">${entryMeterNumber || '–'}</div>
+            </div>
+            <div class="mobile-entry-item">
+              <span class="mobile-entry-label">Zählerstand</span>
+              <div class="mobile-entry-value mono">${e.valueFormatted || germanFormat(e.value)}</div>
+            </div>
+            <div class="mobile-entry-item">
+              <span class="mobile-entry-label">Verbrauch</span>
+              <div class="mobile-entry-value actual mono">${e.actualConsumptionFormatted || germanFormat(e.actualConsumption)}</div>
+            </div>
+            <div class="mobile-entry-item">
+              <span class="mobile-entry-label">Kumulativ</span>
+              <div class="mobile-entry-value cumulative mono">${e.cumulativeConsumptionFormatted || germanFormat(e.cumulativeConsumption)}</div>
+            </div>
+            <div class="mobile-entry-item">
+              <span class="mobile-entry-label">Verbrauchsmonat</span>
+              <div class="mobile-entry-value">${e.consumptionMonth || getConsumptionMonth(e.date)}</div>
+            </div>
+          </div>
+
+          <div class="entry-badges">${statusBadges.join(' ')}</div>
+          ${isFirstEntry ? '' : `<button class="ghost-danger-btn" type="button" style="width:100%;" onclick="requestDelete(${e.id}, '${formatDate(e.date)}', '${e.type.replace(/'/g, "\\'")}')">Löschen</button>`}
+        `;
+        mobileEntries.appendChild(card);
+      });
+    }
+
+    function toggleEntries() {
+      showingAll = !showingAll;
+      renderEntries();
+    }
+
+    function requestDelete(id, dateLabel, typeLabel) {
+      openConfirmModal(`Eintrag vom ${dateLabel} (${typeLabel}) wirklich löschen?`, async () => {
+        try {
+          const response = await fetch('/api/entries/' + id, { method: 'DELETE' });
+          if (response.ok) {
+            allEntries = allEntries.filter(e => e.id !== id);
+            renderEntries();
+            await loadConsumptionStats();
+            await loadMonthlyChart();
+          } else {
+            const error = await response.json();
+            alert('Fehler beim Löschen: ' + error.error);
+          }
+        } catch (error) {
+          console.error('Fehler beim Löschen:', error);
+          alert('Fehler beim Löschen: ' + error.message);
+        }
+      }, true, 'Ja, löschen');
+    }
+
+    function exportCSV() {
+      const filterType = document.getElementById('filterType').value;
+      let url = '/api/export/csv';
+      if (filterType) url += '?type=' + encodeURIComponent(filterType);
+      window.location.href = url;
+    }
+
+    async function addEntry() {
+      const type = document.getElementById('type').value;
+      const value = document.getElementById('value').value;
+      const date = document.getElementById('date').value;
+      const isNewMeter = document.getElementById('isNewMeter').checked;
+      const newMeterNumber = document.getElementById('newMeterNumber').value;
+
+      if (!value) {
+        alert('Bitte gib einen Zählerstand ein.');
+        return;
+      }
+
+      const save = async () => {
+        try {
+          const requestBody = { type, value, date, isNewMeter };
+          if (isNewMeter && newMeterNumber) requestBody.updateMeterNumber = newMeterNumber;
+
+          await fetch('/api/entries', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody)
+          });
+
+          document.getElementById('value').value = '';
+          document.getElementById('isNewMeter').checked = false;
+          document.getElementById('newMeterNumber').value = '';
+          document.getElementById('meterUpdateSection').classList.add('hidden');
+          setCurrentDate();
+
+          const currentFilter = document.getElementById('filterType').value;
+          if (currentFilter === type || currentFilter === '') {
+            await loadData();
+            await loadMeterNumbers();
+          }
+        } catch (error) {
+          console.error('Fehler beim Speichern:', error);
+          alert('Fehler beim Speichern: ' + error.message);
+        }
+      };
+
+      if (isNewMeter && !newMeterNumber) {
+        openConfirmModal('Es wurde keine neue Zählernummer eingegeben. Trotzdem fortfahren?', save, false, 'Trotzdem speichern');
+        return;
+      }
+
+      await save();
+    }
+
+    setCurrentDate();
+    updateHeroSelection();
+
+    loadConfig().then(async () => {
+      await loadMeterNumbers();
+      await loadData();
+    });
+
+    document.getElementById('configInfo').innerHTML = '<div class="config-text"><strong>Lade Konfiguration...</strong></div>';
+
+    toggleSectionsBasedOnFilter(document.getElementById('filterType').value);
+  </script>
+</body>
+</html>
