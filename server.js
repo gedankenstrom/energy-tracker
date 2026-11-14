@@ -1,13 +1,146 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const session = require('express-session');
 const fs = require('fs-extra');
 const path = require('path');
+const crypto = require('crypto');
 
 const app = express();
 app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: false }));
 
-// Statische Dateien servieren
-app.use(express.static(__dirname));
+const AUTH_USERNAME = process.env.AUTH_USERNAME;
+const AUTH_PASSWORD = process.env.AUTH_PASSWORD;
+const SESSION_SECRET = process.env.SESSION_SECRET;
+const HA_API_TOKEN = process.env.HA_API_TOKEN;
+const missingAuthSettings = Object.entries({ AUTH_USERNAME, AUTH_PASSWORD, SESSION_SECRET, HA_API_TOKEN })
+  .filter(([, value]) => !value)
+  .map(([name]) => name);
+
+if (missingAuthSettings.length) {
+  throw new Error(`Fehlende Umgebungsvariablen: ${missingAuthSettings.join(', ')}`);
+}
+if (AUTH_PASSWORD.length < 12) {
+  throw new Error('AUTH_PASSWORD muss mindestens 12 Zeichen lang sein');
+}
+if (Buffer.byteLength(SESSION_SECRET, 'utf8') < 32 || Buffer.byteLength(HA_API_TOKEN, 'utf8') < 32) {
+  throw new Error('SESSION_SECRET und HA_API_TOKEN müssen mindestens 32 Zeichen lang sein');
+}
+
+app.set('trust proxy', process.env.TRUST_PROXY === 'true');
+app.use(session({
+  name: 'energy-tracker.sid',
+  secret: SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.SESSION_COOKIE_SECURE === 'true',
+    maxAge: 8 * 60 * 60 * 1000
+  }
+}));
+
+function safeEqual(left, right) {
+  const leftBuffer = Buffer.from(String(left || ''), 'utf8');
+  const rightBuffer = Buffer.from(String(right || ''), 'utf8');
+  return leftBuffer.length === rightBuffer.length && crypto.timingSafeEqual(leftBuffer, rightBuffer);
+}
+
+const loginPage = (errorMessage = '') => `<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Anmeldung · Energie-Tracker</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 20px; font: 16px system-ui, sans-serif; color: #162033; background: linear-gradient(145deg,#f8fbff,#eaf1ff); }
+    main { width: min(100%, 390px); padding: 32px; border: 1px solid #dce4f2; border-radius: 22px; background: #fff; box-shadow: 0 20px 48px #1820331a; }
+    h1 { margin: 0 0 8px; font-size: 1.65rem; }
+    p { margin: 0 0 22px; color: #657286; }
+    label { display: block; margin: 14px 0 6px; font-weight: 650; }
+    input { width: 100%; min-height: 46px; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 10px; font: inherit; }
+    button { width: 100%; min-height: 46px; margin-top: 22px; border: 0; border-radius: 10px; background: #2f6df6; color: white; font: inherit; font-weight: 700; cursor: pointer; }
+    .error { margin: 14px 0 0; color: #b42318; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Energie-Tracker</h1>
+    <p>Bitte anmelden, um deine Zählerdaten zu öffnen.</p>
+    <form method="post" action="/login">
+      <label for="username">Benutzername</label>
+      <input id="username" name="username" autocomplete="username" required autofocus>
+      <label for="password">Passwort</label>
+      <input id="password" name="password" type="password" autocomplete="current-password" required>
+      <button type="submit">Anmelden</button>
+    </form>
+    ${errorMessage ? `<p class="error">${errorMessage}</p>` : ''}
+  </main>
+</body>
+</html>`;
+
+app.get('/login', (req, res) => {
+  if (req.session.authenticated) return res.redirect('/');
+  res.set('Cache-Control', 'no-store');
+  res.type('html').send(loginPage());
+});
+
+app.post('/login', (req, res, next) => {
+  if (!safeEqual(req.body.username, AUTH_USERNAME) || !safeEqual(req.body.password, AUTH_PASSWORD)) {
+    res.status(401).set('Cache-Control', 'no-store').type('html').send(loginPage('Benutzername oder Passwort ist falsch.'));
+    return;
+  }
+
+  req.session.regenerate((error) => {
+    if (error) return next(error);
+    req.session.authenticated = true;
+    req.session.save((saveError) => {
+      if (saveError) return next(saveError);
+      res.redirect(303, '/');
+    });
+  });
+});
+
+function hasHaReadAccess(req) {
+  const permittedPath = req.path === '/api/consumption-stats' || req.path === '/api/providers';
+  if (req.method !== 'GET' || !permittedPath) return false;
+  const authorization = req.get('authorization') || '';
+  const match = authorization.match(/^Bearer\s+(.+)$/i);
+  return Boolean(match && safeEqual(match[1], HA_API_TOKEN));
+}
+
+app.use((req, res, next) => {
+  if (req.path === '/api' || req.path.startsWith('/api/')) {
+    res.set('Cache-Control', 'no-store');
+  }
+  if (req.path === '/login') return next();
+  if (req.session.authenticated) {
+    res.set('Cache-Control', 'no-store');
+    return next();
+  }
+  if (hasHaReadAccess(req)) return next();
+  if (req.path === '/api' || req.path.startsWith('/api/')) {
+    return res.status(401).json({ error: 'Anmeldung oder gültiger Home-Assistant-Token erforderlich' });
+  }
+  return res.redirect('/login');
+});
+
+app.post('/logout', (req, res, next) => {
+  req.session.destroy((error) => {
+    if (error) return next(error);
+    res.clearCookie('energy-tracker.sid', {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.SESSION_COOKIE_SECURE === 'true'
+    });
+    res.redirect(303, '/login');
+  });
+});
+
+app.use(express.static(__dirname, { index: false }));
 
 const dataDir = path.join(__dirname, 'data');
 const dataFile = path.join(dataDir, 'data.json');
@@ -531,15 +664,19 @@ app.post('/api/entries', async (req, res) => {
     
     if (isNewMeter && updateMeterNumber) {
       let meters = await fs.readJson(metersFile);
-      await fetch('http://localhost:3000/api/meters', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          type, 
-          meterNumber: updateMeterNumber,
-          isNewMeter: true 
-        })
-      });
+      let meterHistory = await fs.readJson(meterHistoryFile);
+      if (meters[type] && meters[type] !== updateMeterNumber) {
+        if (!meterHistory[type]) meterHistory[type] = [];
+        meterHistory[type].push({
+          meterNumber: meters[type],
+          changedAt: new Date().toISOString(),
+          changedTo: updateMeterNumber,
+          isNewMeter: true
+        });
+        await fs.writeJson(meterHistoryFile, meterHistory, { spaces: 2 });
+      }
+      meters[type] = updateMeterNumber;
+      await fs.writeJson(metersFile, meters, { spaces: 2 });
     }
     
     const typeEntries = entries.filter(e => e.type === type);

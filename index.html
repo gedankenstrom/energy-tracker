@@ -115,6 +115,20 @@
       white-space: nowrap;
     }
 
+    .hero-tools { display: flex; align-items: center; gap: 10px; }
+    .logout-form { margin: 0; }
+    .logout-button {
+      min-height: 40px;
+      padding: 9px 13px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--text);
+      background: var(--surface-strong);
+      font: inherit;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
     .card { padding: 20px; min-width: 0; }
 
     .section-title {
@@ -923,7 +937,12 @@
         <h1>Energieverbrauchs-Tracker</h1>
         <p>Strom, Wasser, Zählerstände und Anbieter an einem Ort.</p>
       </div>
-      <div class="hero-badge" id="heroSelection">Strom aktiv</div>
+      <div class="hero-tools">
+        <div class="hero-badge" id="heroSelection">Strom aktiv</div>
+        <form class="logout-form" method="post" action="/logout">
+          <button class="logout-button" type="submit">Abmelden</button>
+        </form>
+      </div>
     </section>
 
     <div class="config-banner" id="configInfo">📅 <strong>Lade Konfiguration...</strong></div>
