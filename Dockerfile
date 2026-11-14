@@ -6,5 +6,6 @@ RUN npm install --omit=dev
 COPY server.js index.html ./
 
 ENV NODE_ENV=production
-EXPOSE 3000
+ENV PORT=9302
+EXPOSE 9302
 CMD ["npm", "start"]
