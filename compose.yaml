@@ -6,8 +6,9 @@ services:
     container_name: energy-tracker-new
     working_dir: /app
     command: sh -c "npm install --omit=dev && node server.js"
+    restart: unless-stopped
     ports:
-      - "9092:3000"
+      - "192.168.25.101:9092:3000"
     volumes:
       - energy_data:/app/data
       - ./package.json:/app/package.json:ro
@@ -15,7 +16,6 @@ services:
       - ./index.html:/app/index.html:ro
     environment:
       - READING_DAY=1
-    restart: unless-stopped
 
 volumes:
   energy_data:
