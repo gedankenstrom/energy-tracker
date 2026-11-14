@@ -4,11 +4,11 @@ Weboberfläche zum Erfassen und Auswerten von Strom-, Gas- und Wasserzählerstä
 
 ## Portainer-Stack
 
-Der Stack verwendet das Container-Image `ghcr.io/gedankenstrom/energy-tracker:latest` und speichert die Anwendungsdaten im Docker-Volume `energy_tracker_data`.
+Der Stack verwendet das Container-Image `ghcr.io/gedankenstrom/energy-tracker:latest` und speichert die Anwendungsdaten im Docker-Volume `energy_data`.
 
 In Portainer unter **Stacks → Add stack** den Stack-Namen `energy-tracker` eintragen, dann die Datei `compose.yaml` aus diesem Repository als Stack-Definition verwenden. Alternativ den Inhalt der Compose-Datei in den Web-Editor kopieren.
 
-Nach dem Start ist die Anwendung auf Port `9302` erreichbar. `READING_DAY` kann in der Stack-Definition angepasst werden.
+Nach dem Start ist die Anwendung auf Port `9092` des Docker-Hosts erreichbar. Im Container hört der Server auf Port `3000`. `READING_DAY` kann in der Stack-Definition angepasst werden.
 
 ## Image-Veröffentlichung
 
@@ -23,4 +23,4 @@ npm install
 npm start
 ```
 
-Die Anwendung läuft standardmäßig auf Port 9302. Die JSON-Datendateien werden automatisch unter `data/` angelegt.
+Die Anwendung läuft standardmäßig auf Port 3000. Die JSON-Datendateien werden automatisch unter `data/` angelegt.
