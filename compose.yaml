@@ -1,21 +1,15 @@
-version: "3.8"
-
 services:
   energy-tracker:
-    image: node:18-alpine
-    container_name: energy-tracker-new
-    working_dir: /app
-    command: sh -c "npm install --omit=dev && node server.js"
-    restart: unless-stopped
+    image: ghcr.io/gedankenstrom/energy-tracker:latest
+    container_name: energy-tracker
     ports:
-      - "192.168.25.101:9092:3000"
-    volumes:
-      - energy_data:/app/data
-      - ./package.json:/app/package.json:ro
-      - ./server.js:/app/server.js:ro
-      - ./index.html:/app/index.html:ro
+      - "9302:9302"
     environment:
-      - READING_DAY=1
+      PORT: 9302
+      READING_DAY: 1
+    volumes:
+      - energy_tracker_data:/app/data
+    restart: unless-stopped
 
 volumes:
-  energy_data:
+  energy_tracker_data:
